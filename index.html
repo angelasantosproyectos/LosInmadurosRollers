@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RollerMadrid · Rueda con nosotros</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛼</text></svg>"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+  <!-- ═══ NAV ═══ -->
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo" data-page="home">
+        <span class="logo-icon">🛼</span>
+        <span class="logo-text">Roller<strong>Madrid</strong></span>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#" data-page="home" class="nav-link active">Inicio</a></li>
+        <li><a href="#" data-page="rutas" class="nav-link">Rutas</a></li>
+        <li><a href="#" data-page="crear" class="nav-link">Convocar</a></li>
+        <li><a href="#" data-page="favoritos" class="nav-link auth-required">Favoritos</a></li>
+        <li><a href="#" data-page="comunidad" class="nav-link">Comunidad</a></li>
+      </ul>
+      <div class="nav-actions">
+        <div id="authBtns">
+          <button class="btn-ghost" id="btnLogin">Entrar</button>
+          <button class="btn-primary" id="btnRegister">Únete</button>
+        </div>
+        <div id="userMenu" class="hidden">
+          <div class="user-avatar" id="userAvatar">U</div>
+          <div class="user-dropdown" id="userDropdown">
+            <span id="userName">Usuario</span>
+            <a href="#" data-page="favoritos">❤️ Mis favoritos</a>
+            <a href="#" data-page="miperfil">👤 Mi perfil</a>
+            <hr/>
+            <button id="btnLogout">Cerrar sesión</button>
+          </div>
+        </div>
+        <button class="hamburger" id="hamburger" aria-label="Menú">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══ PAGES ═══ -->
+  <main id="appMain">
+
+    <!-- HOME -->
+    <section id="page-home" class="page active">
+      <div class="hero">
+        <div class="hero-bg">
+          <div class="hero-blob b1"></div>
+          <div class="hero-blob b2"></div>
+          <div class="hero-grid"></div>
+        </div>
+        <div class="hero-content">
+          <div class="hero-badge">🛼 Madrid · Comunidad Roller</div>
+          <h1 class="hero-title">Rueda con<br/><span class="hero-accent">Madrid</span></h1>
+          <p class="hero-sub">La comunidad que reinventa la forma de explorar la ciudad. Crea tu ruta, convoca al grupo y sal a rodar.</p>
+          <div class="hero-btns">
+            <button class="btn-primary btn-lg" data-page="rutas">Ver rutas</button>
+            <button class="btn-outline btn-lg" data-page="crear">Convocar ruta</button>
+          </div>
+          <div class="hero-stats">
+            <div class="stat"><span id="statRoutes">0</span><small>Rutas</small></div>
+            <div class="stat"><span id="statUsers">0</span><small>Rollers</small></div>
+            <div class="stat"><span>Madrid</span><small>Ciudad</small></div>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="skate-ring">
+            <div class="ring r1"></div>
+            <div class="ring r2"></div>
+            <div class="ring r3"></div>
+            <div class="skate-emoji">🛼</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Próximas rutas preview -->
+      <div class="section-wrap">
+        <div class="section-header">
+          <h2>Próximas rutas</h2>
+          <a href="#" data-page="rutas" class="link-arrow">Ver todas →</a>
+        </div>
+        <div class="cards-grid" id="homeRoutesList">
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="cta-band">
+        <h2>¿Tienes una ruta en mente?</h2>
+        <p>Convoca al grupo y ¡a rodar!</p>
+        <button class="btn-primary btn-lg" data-page="crear">Convocar ruta</button>
+      </div>
+    </section>
+
+    <!-- RUTAS -->
+    <section id="page-rutas" class="page">
+      <div class="page-hero page-hero--rutas">
+        <h1>Rutas en Madrid</h1>
+        <p>Explora, filtra y únete a las próximas salidas</p>
+      </div>
+      <div class="section-wrap">
+        <div class="filters-bar">
+          <input type="text" id="searchRoutes" placeholder="🔍 Buscar ruta..." class="filter-input"/>
+          <select id="filterLevel" class="filter-select">
+            <option value="">Todos los niveles</option>
+            <option value="fácil">🟢 Fácil</option>
+            <option value="medio">🟡 Medio</option>
+            <option value="difícil">🔴 Difícil</option>
+          </select>
+          <select id="filterZone" class="filter-select">
+            <option value="">Todas las zonas</option>
+            <option value="centro">Centro</option>
+            <option value="norte">Norte</option>
+            <option value="sur">Sur</option>
+            <option value="este">Este</option>
+            <option value="oeste">Oeste</option>
+            <option value="retiro">Retiro</option>
+          </select>
+        </div>
+        <div class="cards-grid" id="routesList">
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+        </div>
+        <p class="empty-msg hidden" id="emptyRoutes">No hay rutas con esos filtros 😅</p>
+      </div>
+    </section>
+
+    <!-- DETALLE RUTA -->
+    <section id="page-detalle" class="page">
+      <div class="detalle-wrap" id="detalleContent">
+        <!-- JS renders here -->
+      </div>
+    </section>
+
+    <!-- CREAR RUTA -->
+    <section id="page-crear" class="page">
+      <div class="page-hero page-hero--crear">
+        <h1>Convocar ruta</h1>
+        <p>Propón una salida y reúne al grupo</p>
+      </div>
+      <div class="section-wrap">
+        <div class="form-card" id="crearFormWrap">
+          <div class="auth-gate hidden" id="crearAuthGate">
+            <div class="auth-gate-icon">🔒</div>
+            <h3>Inicia sesión para convocar</h3>
+            <p>Necesitas una cuenta para crear rutas</p>
+            <button class="btn-primary" id="crearLoginBtn">Entrar / Registrarse</button>
+          </div>
+          <form id="crearForm" class="hidden">
+            <h2>Nueva ruta</h2>
+            <div class="form-row">
+              <div class="field">
+                <label>Nombre de la ruta *</label>
+                <input type="text" id="rutaNombre" placeholder="Ej: Ruta por el Retiro" required/>
+              </div>
+              <div class="field">
+                <label>Zona *</label>
+                <select id="rutaZona" required>
+                  <option value="">Selecciona zona</option>
+                  <option value="centro">Centro</option>
+                  <option value="norte">Norte</option>
+                  <option value="sur">Sur</option>
+                  <option value="este">Este</option>
+                  <option value="oeste">Oeste</option>
+                  <option value="retiro">Retiro</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="field">
+                <label>Punto de encuentro *</label>
+                <input type="text" id="rutaPunto" placeholder="Ej: Puerta de Alcalá" required/>
+              </div>
+              <div class="field">
+                <label>Nivel *</label>
+                <select id="rutaNivel" required>
+                  <option value="">Selecciona nivel</option>
+                  <option value="fácil">🟢 Fácil</option>
+                  <option value="medio">🟡 Medio</option>
+                  <option value="difícil">🔴 Difícil</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="field">
+                <label>Fecha y hora *</label>
+                <input type="datetime-local" id="rutaFecha" required/>
+              </div>
+              <div class="field">
+                <label>Distancia (km)</label>
+                <input type="number" id="rutaKm" placeholder="Ej: 12" min="1" max="100"/>
+              </div>
+            </div>
+            <div class="field">
+              <label>Descripción *</label>
+              <textarea id="rutaDesc" placeholder="Cuéntanos sobre la ruta, el ritmo, qué ver..." rows="4" required></textarea>
+            </div>
+            <div class="field">
+              <label>Imagen de portada (URL)</label>
+              <input type="url" id="rutaImg" placeholder="https://...jpg"/>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn-primary btn-lg" id="crearSubmitBtn">🛼 Publicar ruta</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAVORITOS -->
+    <section id="page-favoritos" class="page">
+      <div class="page-hero page-hero--favoritos">
+        <h1>Mis favoritos</h1>
+        <p>Las rutas que has guardado</p>
+      </div>
+      <div class="section-wrap">
+        <div class="auth-gate" id="favAuthGate">
+          <div class="auth-gate-icon">❤️</div>
+          <h3>Inicia sesión para ver tus favoritos</h3>
+          <button class="btn-primary" id="favLoginBtn">Entrar</button>
+        </div>
+        <div class="cards-grid hidden" id="favList"></div>
+        <p class="empty-msg hidden" id="emptyFavs">Aún no tienes rutas guardadas 😊<br/><a href="#" data-page="rutas">Explora rutas →</a></p>
+      </div>
+    </section>
+
+    <!-- COMUNIDAD -->
+    <section id="page-comunidad" class="page">
+      <div class="page-hero page-hero--comunidad">
+        <h1>Comunidad</h1>
+        <p>Chat y comentarios con el grupo</p>
+      </div>
+      <div class="section-wrap comunidad-layout">
+        <div class="chat-panel">
+          <div class="chat-header">
+            <span>💬 Chat general</span>
+            <span class="online-dot">● Online</span>
+          </div>
+          <div class="chat-messages" id="chatMessages">
+            <div class="chat-loading">Cargando mensajes...</div>
+          </div>
+          <div class="chat-input-wrap" id="chatInputWrap">
+            <div class="auth-gate-inline hidden" id="chatAuthGate">
+              <p>Inicia sesión para chatear</p>
+              <button class="btn-primary btn-sm" id="chatLoginBtn">Entrar</button>
+            </div>
+            <div id="chatForm" class="hidden">
+              <input type="text" id="chatInput" placeholder="Escribe un mensaje..." maxlength="300"/>
+              <button id="chatSend" class="btn-primary">Enviar</button>
+            </div>
+          </div>
+        </div>
+        <div class="activity-panel">
+          <h3>Actividad reciente</h3>
+          <div id="activityFeed">
+            <div class="chat-loading">Cargando...</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MI PERFIL -->
+    <section id="page-miperfil" class="page">
+      <div class="page-hero">
+        <h1>Mi perfil</h1>
+      </div>
+      <div class="section-wrap">
+        <div class="profile-card" id="profileCard">
+          <div class="profile-avatar-big" id="profileAvatarBig">U</div>
+          <div class="profile-info">
+            <h2 id="profileName">–</h2>
+            <p id="profileEmail">–</p>
+            <p class="profile-joined" id="profileJoined"></p>
+          </div>
+          <div class="profile-stats">
+            <div class="stat"><span id="pStatRoutes">0</span><small>Rutas creadas</small></div>
+            <div class="stat"><span id="pStatFavs">0</span><small>Favoritos</small></div>
+          </div>
+          <h3>Mis rutas publicadas</h3>
+          <div class="cards-grid" id="myRoutesList">
+            <p class="empty-msg">Aún no has creado rutas</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo-icon">🛼</span>
+        <span class="logo-text">Roller<strong>Madrid</strong></span>
+      </div>
+      <p class="footer-tagline">La comunidad roller de Madrid · Todos los derechos reservados 2025</p>
+      <div class="footer-links">
+        <a href="#" data-page="rutas">Rutas</a>
+        <a href="#" data-page="comunidad">Comunidad</a>
+        <a href="mailto:info@rollermadrid.es">Contacto</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ═══ MODAL AUTH ═══ -->
+  <div id="authModal" class="modal-overlay hidden">
+    <div class="modal">
+      <button class="modal-close" id="modalClose">×</button>
+      <div class="modal-tabs">
+        <button class="modal-tab active" id="tabLogin">Entrar</button>
+        <button class="modal-tab" id="tabRegister">Registrarse</button>
+      </div>
+      <!-- Login -->
+      <form id="formLogin" class="modal-form">
+        <h2>Bienvenid@ de nuevo 🛼</h2>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="loginEmail" placeholder="tu@email.com" required/>
+        </div>
+        <div class="field">
+          <label>Contraseña</label>
+          <input type="password" id="loginPass" placeholder="••••••" required/>
+        </div>
+        <div class="modal-error hidden" id="loginError"></div>
+        <button type="submit" class="btn-primary btn-lg w100">Entrar</button>
+        <div class="modal-divider"><span>o</span></div>
+        <button type="button" class="btn-google" id="btnGoogle">
+          <svg viewBox="0 0 24 24" width="18"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Continuar con Google
+        </button>
+      </form>
+      <!-- Register -->
+      <form id="formRegister" class="modal-form hidden">
+        <h2>Únete a la comunidad 🛼</h2>
+        <div class="field">
+          <label>Nombre</label>
+          <input type="text" id="regName" placeholder="Tu nombre" required/>
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="regEmail" placeholder="tu@email.com" required/>
+        </div>
+        <div class="field">
+          <label>Contraseña</label>
+          <input type="password" id="regPass" placeholder="Mínimo 6 caracteres" required minlength="6"/>
+        </div>
+        <div class="modal-error hidden" id="regError"></div>
+        <button type="submit" class="btn-primary btn-lg w100">Crear cuenta</button>
+        <div class="modal-divider"><span>o</span></div>
+        <button type="button" class="btn-google" id="btnGoogleReg">
+          <svg viewBox="0 0 24 24" width="18"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Continuar con Google
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Firebase SDK -->
+  <script type="module" src="js/firebase-config.js"></script>
+  <script type="module" src="js/auth.js"></script>
+  <script type="module" src="js/router.js"></script>
+  <script type="module" src="js/routes.js"></script>
+  <script type="module" src="js/chat.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
