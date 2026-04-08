@@ -1,22 +1,18 @@
 // ════════════════════════════════════════════
-//  FIREBASE CONFIGURATION
-//  ➜ Reemplaza los valores con tu proyecto Firebase
-//  ➜ Ve a: console.firebase.google.com
-//    → Tu proyecto → Configuración → Aplicaciones web
+//  FIREBASE CONFIGURATION · CDN (sin npm)
 // ════════════════════════════════════════════
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// ⚠️ REEMPLAZA ESTOS VALORES CON LOS DE TU PROYECTO FIREBASE
 const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_AUTH_DOMAIN",
-  projectId: "TU_PROJECT_ID",
-  storageBucket: "TU_STORAGE_BUCKET",
-  messagingSenderId: "TU_MESSAGING_SENDER_ID",
-  appId: "TU_APP_ID"
+  apiKey: "AIzaSyAkIu_c-7EuvsPt9J0QtCutv_WP5Ttljc0",
+  authDomain: "losinmadurosrollers.firebaseapp.com",
+  projectId: "losinmadurosrollers",
+  storageBucket: "losinmadurosrollers.firebasestorage.app",
+  messagingSenderId: "19664212284",
+  appId: "1:19664212284:web:6fa94d32474385de8f4e39"
 };
 
 const app = initializeApp(firebaseConfig);

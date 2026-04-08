@@ -1,116 +1,119 @@
-# 🛼 RollerMadrid · Web Comunidad
-
-Web SPA de patinaje en línea con Firebase, autenticación, rutas, favoritos y chat en tiempo real.
+# 🛼 RollerMadrid · Guía de configuración Firebase
 
 ---
 
-## 🚀 Stack
+## ❗ Problema que tenías (ya corregido)
 
-- HTML + CSS + JS vanilla (ES Modules)
-- Firebase v10 (Auth, Firestore)
-- Vercel (deploy)
+El archivo `js/firebase-config.js` tenía **imports duplicados y mezclados** — usaba a la vez el formato NPM (`import from "firebase/app"`) y el formato CDN (`import from "https://..."`). Eso hace que el navegador falle silenciosamente y no se pueda autenticar ni leer Firestore.
+
+**Ya está corregido.** Solo queda hacer los pasos de Firebase Console.
 
 ---
 
-## ⚙️ Configuración Firebase
+## ✅ Pasos que DEBES hacer en Firebase Console
 
-### 1. Crear proyecto Firebase
+### PASO 1 — Activar Authentication
 
 1. Ve a [console.firebase.google.com](https://console.firebase.google.com)
-2. **Crear proyecto** → pon un nombre (ej: `rollermadrid`)
-3. Desactiva Google Analytics si no lo necesitas → **Crear proyecto**
+2. Selecciona tu proyecto `losinmadurosrollers`
+3. Menú izquierdo → **Authentication** → **Comenzar** (si no está activo)
+4. Pestaña **Sign-in method**
+5. Activa **Correo electrónico/contraseña** → guarda
+6. Activa **Google** → pon tu email de soporte → guarda
 
-### 2. Configurar Authentication
+---
 
-1. En tu proyecto → **Authentication** → **Comenzar**
-2. Pestaña **Sign-in method** → Activa:
-   - ✅ **Correo electrónico/contraseña**
-   - ✅ **Google** (necesitarás un nombre de la app y email de soporte)
+### PASO 2 — Crear la base de datos Firestore
 
-### 3. Configurar Firestore
+1. Menú izquierdo → **Firestore Database** → **Crear base de datos**
+2. Elige **Empezar en modo de producción**
+3. Selecciona región: `europe-west1` (la más cercana a Madrid)
+4. Espera a que se cree
 
-1. **Firestore Database** → **Crear base de datos**
-2. Selecciona **Modo de producción** → elige región (ej: `europe-west1`)
-3. Una vez creada, ve a **Reglas** y pega esto:
+---
+
+### PASO 3 — Pegar las Reglas de Firestore
+
+1. En Firestore → pestaña **Reglas**
+2. Borra todo lo que hay y pega esto exactamente:
 
 ```
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Rutas: todos pueden leer, solo autenticados pueden crear
+
     match /routes/{routeId} {
       allow read: if true;
       allow create: if request.auth != null;
       allow update: if request.auth != null;
-      allow delete: if request.auth != null && request.auth.uid == resource.data.authorId;
+      allow delete: if request.auth != null
+                    && request.auth.uid == resource.data.authorId;
 
-      // Comentarios
       match /comments/{commentId} {
         allow read: if true;
         allow create: if request.auth != null;
       }
     }
 
-    // Chat: todos pueden leer, solo autenticados pueden escribir
     match /chat/{msgId} {
       allow read: if true;
       allow create: if request.auth != null;
     }
 
-    // Usuarios: solo el propio usuario puede leer/editar su doc
     match /users/{userId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null
+                   && request.auth.uid == userId;
     }
   }
 }
 ```
 
-4. Crea los **Índices** necesarios (Firestore te pedirá crearlos la primera vez que falten — aparecerá un link en la consola del navegador).
-
-### 4. Obtener la configuración de tu app
-
-1. En Firebase → ⚙️ **Configuración del proyecto** → pestaña **General**
-2. Baja hasta **Tus apps** → **Agregar app** → elige el icono **Web** (`</>`)
-3. Pon un nombre → **Registrar app**
-4. Copia el objeto `firebaseConfig`
-
-### 5. Pegar la config en el proyecto
-
-Abre `js/firebase-config.js` y reemplaza los valores:
-
-```js
-const firebaseConfig = {
-  apiKey: "AIzaSy...",
-  authDomain: "tu-proyecto.firebaseapp.com",
-  projectId: "tu-proyecto",
-  storageBucket: "tu-proyecto.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abc123"
-};
-```
-
-### 6. Dominio autorizado para Google Auth (para Vercel)
-
-1. Firebase → Authentication → **Sign-in method** → baja a **Dominios autorizados**
-2. Añade tu dominio de Vercel: `tu-app.vercel.app`
+3. Pulsa **Publicar**
 
 ---
 
-## 📦 Estructura de archivos
+### PASO 4 — Crear los Índices de Firestore
+
+La primera vez que uses los filtros o el chat, Firestore pedirá crear índices. Verás el error en la **consola del navegador** (F12 → Console) con un link directo para crearlos. Solo tienes que clicar ese link y aceptar.
+
+Los índices que necesitas son:
+
+| Colección | Campos | Orden |
+|---|---|---|
+| `routes` | `createdAt` | Descendente |
+| `routes` | `authorId`, `createdAt` | Descendente |
+| `routes` | `favoritedBy` (array), `createdAt` | Descendente |
+| `chat` | `createdAt` | Descendente |
+
+---
+
+### PASO 5 — Añadir dominios autorizados (para Google login en producción)
+
+1. Firebase → Authentication → **Sign-in method** → baja al final
+2. **Dominios autorizados** → **Añadir dominio**
+3. Añade: `tu-app.vercel.app` (el dominio que te dé Vercel al publicar)
+4. Si usas dominio propio, añádelo también
+
+> ⚠️ Sin este paso, el login con Google falla en producción.
+
+---
+
+## 📦 Estructura del proyecto
 
 ```
-roller-madrid/
-├── index.html              # SPA principal
+LosInmadurosRollers/
+├── index.html               # App principal (SPA)
+├── vercel.json              # Configuración Vercel (routing)
 ├── css/
-│   └── style.css           # Estilos
+│   └── style.css
 ├── js/
-│   ├── firebase-config.js  # ⚠️ Aquí va tu config Firebase
-│   ├── auth.js             # Autenticación
-│   ├── router.js           # Navegación SPA
-│   ├── routes.js           # CRUD rutas, favoritos, comentarios
-│   ├── chat.js             # Chat en tiempo real
-│   └── app.js              # Orquestador principal
+│   ├── firebase-config.js   ← Ya tiene tus credenciales (corregido)
+│   ├── auth.js              ← Login, registro, Google
+│   ├── router.js            ← Navegación SPA
+│   ├── routes.js            ← CRUD rutas, favoritos, comentarios
+│   ├── chat.js              ← Chat en tiempo real
+│   └── app.js               ← Orquestador principal
 └── README.md
 ```
 
@@ -118,40 +121,27 @@ roller-madrid/
 
 ## 🌐 Deploy en Vercel
 
-1. Sube el proyecto a GitHub
-2. Ve a [vercel.com](https://vercel.com) → **New Project** → importa tu repo
+1. Sube la carpeta a GitHub
+2. Ve a [vercel.com](https://vercel.com) → **New Project** → importa el repo
 3. Configuración:
    - **Framework Preset**: Other
-   - **Root Directory**: `./` (o la carpeta donde esté `index.html`)
-   - No necesitas build command
-4. **Deploy** → ¡listo!
-
-> ⚠️ Recuerda añadir el dominio `.vercel.app` a los dominios autorizados de Firebase Auth.
-
----
-
-## 🗂️ Colecciones Firestore
-
-| Colección | Campos principales |
-|---|---|
-| `routes` | nombre, zona, punto, nivel, fecha, km, descripcion, img, authorId, authorName, favoritedBy[], favorites |
-| `routes/{id}/comments` | text, authorId, authorName, createdAt |
-| `chat` | text, authorId, authorName, createdAt |
-| `users` | name, email, createdAt, favorites[] |
+   - **Root Directory**: la carpeta donde está `index.html`
+   - **Build Command**: dejar vacío
+   - **Output Directory**: dejar vacío
+4. **Deploy**
 
 ---
 
 ## ✨ Funcionalidades
 
-- 🏠 **Home** — Hero animado + preview de próximas rutas + stats
-- 🛣️ **Rutas** — Listado con filtros (nivel, zona, búsqueda)
-- 📋 **Detalle de ruta** — Info completa + comentarios en tiempo real
-- ➕ **Convocar ruta** — Formulario (solo usuarios registrados)
-- ❤️ **Favoritos** — Rutas guardadas por el usuario
-- 💬 **Comunidad** — Chat general en tiempo real + actividad reciente
-- 👤 **Mi perfil** — Stats personales + rutas creadas
-- 🔐 **Auth** — Email/contraseña + Google
+| Página | Descripción |
+|---|---|
+| 🏠 Home | Hero animado + próximas rutas |
+| 🛣️ Rutas | Listado con filtros de nivel y zona |
+| 📋 Detalle | Info de ruta + comentarios en tiempo real |
+| ➕ Convocar | Formulario para crear rutas (requiere login) |
+| ❤️ Favoritos | Rutas guardadas por el usuario |
+| 💬 Comunidad | Chat en tiempo real + actividad |
+| 👤 Mi perfil | Estadísticas y rutas propias |
 
----
-
-Hecho con 🛼 para la comunidad roller de Madrid.
+Hecho con 🛼 para Los Inmaduros Rollers Madrid.
