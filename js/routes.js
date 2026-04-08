@@ -6,17 +6,11 @@ import {
   collection, addDoc, getDocs, getDoc, doc,
   query, orderBy, serverTimestamp, updateDoc,
   arrayUnion, arrayRemove, onSnapshot, limit,
-  where, deleteDoc
+  where
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { currentUser } from "./auth.js";
 import { navigate } from "./router.js";
 import { showToast } from "./app.js";
-
-const ROUTE_IMAGES = [
-  "https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?w=600&q=80",
-  "https://images.unsplash.com/photo-1560448075-a185e5d6c6e3?w=600&q=80",
-  "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&q=80",
-];
 
 // ── HELPERS ──
 function levelBadge(level) {
@@ -29,10 +23,7 @@ function levelEmoji(level) {
 function formatDate(ts) {
   if (!ts) return "–";
   const d = ts.toDate ? ts.toDate() : new Date(ts);
-  return d.toLocaleString("es-ES", {
-    day: "numeric", month: "short",
-    hour: "2-digit", minute: "2-digit"
-  });
+  return d.toLocaleString("es-ES", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 function timeAgo(ts) {
   if (!ts) return "";
@@ -42,6 +33,13 @@ function timeAgo(ts) {
   if (diff < 3600) return `${Math.floor(diff / 60)}min`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
   return formatDate(ts);
+}
+function sortByDate(arr) {
+  return arr.sort((a, b) => {
+    const da = a.createdAt?.toDate?.() || new Date(0);
+    const db2 = b.createdAt?.toDate?.() || new Date(0);
+    return db2 - da;
+  });
 }
 
 // ── CREATE ROUTE ──
@@ -73,13 +71,13 @@ export async function getRoute(id) {
 // ── TOGGLE FAVORITE ──
 export async function toggleFavorite(routeId, user) {
   const routeRef = doc(db, "routes", routeId);
-  const userRef = doc(db, "users", user.uid);
+  const userRef  = doc(db, "users", user.uid);
   const snap = await getDoc(routeRef);
-  if (!snap.exists()) return;
+  if (!snap.exists()) return false;
   const data = snap.data();
   const already = (data.favoritedBy || []).includes(user.uid);
   if (already) {
-    await updateDoc(routeRef, { favoritedBy: arrayRemove(user.uid), favorites: Math.max(0, (data.favorites || 0) - 1) });
+    await updateDoc(routeRef, { favoritedBy: arrayRemove(user.uid), favorites: Math.max(0, (data.favorites || 1) - 1) });
     await updateDoc(userRef, { favorites: arrayRemove(routeId) });
     return false;
   } else {
@@ -90,17 +88,19 @@ export async function toggleFavorite(routeId, user) {
 }
 
 // ── GET USER FAVORITES ──
+// SIN orderBy para evitar índice compuesto — ordenamos en cliente
 export async function getUserFavorites(userId) {
-  const q = query(collection(db, "routes"), where("favoritedBy", "array-contains", userId), orderBy("createdAt", "desc"));
+  const q = query(collection(db, "routes"), where("favoritedBy", "array-contains", userId));
   const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  return sortByDate(snap.docs.map(d => ({ id: d.id, ...d.data() })));
 }
 
 // ── GET USER ROUTES ──
+// SIN orderBy para evitar índice compuesto — ordenamos en cliente
 export async function getUserRoutes(userId) {
-  const q = query(collection(db, "routes"), where("authorId", "==", userId), orderBy("createdAt", "desc"));
+  const q = query(collection(db, "routes"), where("authorId", "==", userId));
   const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  return sortByDate(snap.docs.map(d => ({ id: d.id, ...d.data() })));
 }
 
 // ── ADD COMMENT ──
@@ -115,10 +115,7 @@ export async function addComment(routeId, text, user) {
 
 // ── LISTEN COMMENTS ──
 export function listenComments(routeId, callback) {
-  const q = query(
-    collection(db, "routes", routeId, "comments"),
-    orderBy("createdAt", "asc")
-  );
+  const q = query(collection(db, "routes", routeId, "comments"), orderBy("createdAt", "asc"));
   return onSnapshot(q, snap => {
     callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
   });
@@ -156,18 +153,15 @@ export function renderCard(route, user, onFavClick) {
       </div>
     </div>
   `;
-
   div.querySelector(".btn-fav").addEventListener("click", async (e) => {
     e.stopPropagation();
     if (!user) { window.openAuthModal(); return; }
     await onFavClick(route.id);
   });
-
   div.querySelector(".btn-detail").addEventListener("click", (e) => {
     e.stopPropagation();
     loadDetalleRoute(route.id);
   });
-
   div.addEventListener("click", () => loadDetalleRoute(route.id));
   return div;
 }
@@ -182,15 +176,21 @@ export async function loadRoutesPage(user) {
   allRoutes = await getRoutes();
   renderRoutesList(allRoutes, user);
 
-  // Filters
+  // Clonar nodos para limpiar listeners anteriores
   const searchEl = document.getElementById("searchRoutes");
-  const levelEl = document.getElementById("filterLevel");
-  const zoneEl = document.getElementById("filterZone");
+  const levelEl  = document.getElementById("filterLevel");
+  const zoneEl   = document.getElementById("filterZone");
+  const newSearch = searchEl.cloneNode(true);
+  const newLevel  = levelEl.cloneNode(true);
+  const newZone   = zoneEl.cloneNode(true);
+  searchEl.replaceWith(newSearch);
+  levelEl.replaceWith(newLevel);
+  zoneEl.replaceWith(newZone);
 
   const filter = () => {
-    const s = searchEl.value.toLowerCase();
-    const l = levelEl.value;
-    const z = zoneEl.value;
+    const s = newSearch.value.toLowerCase();
+    const l = newLevel.value;
+    const z = newZone.value;
     const filtered = allRoutes.filter(r => {
       const matchS = !s || r.nombre?.toLowerCase().includes(s) || r.zona?.toLowerCase().includes(s);
       const matchL = !l || r.nivel === l;
@@ -199,17 +199,16 @@ export async function loadRoutesPage(user) {
     });
     renderRoutesList(filtered, user);
   };
+  newSearch.addEventListener("input", filter);
+  newLevel.addEventListener("change", filter);
+  newZone.addEventListener("change", filter);
 
-  searchEl.addEventListener("input", filter);
-  levelEl.addEventListener("change", filter);
-  zoneEl.addEventListener("change", filter);
-
-  // Stats counter home
-  document.getElementById("statRoutes").textContent = allRoutes.length;
+  const statEl = document.getElementById("statRoutes");
+  if (statEl) statEl.textContent = allRoutes.length;
 }
 
 function renderRoutesList(routes, user) {
-  const list = document.getElementById("routesList");
+  const list  = document.getElementById("routesList");
   const empty = document.getElementById("emptyRoutes");
   list.innerHTML = "";
   if (!routes.length) { empty.classList.remove("hidden"); return; }
@@ -237,7 +236,8 @@ export async function loadHomePreview(user) {
     card.style.animationDelay = `${i * 0.08}s`;
     list.appendChild(card);
   });
-  document.getElementById("statRoutes").textContent = allRoutes.length || routes.length;
+  const statEl = document.getElementById("statRoutes");
+  if (statEl) statEl.textContent = allRoutes.length || routes.length;
 }
 
 // ── HANDLE FAV ──
@@ -245,7 +245,6 @@ async function handleFav(routeId, user) {
   if (!user) { window.openAuthModal(); return; }
   const added = await toggleFavorite(routeId, user);
   showToast(added ? "❤️ Añadido a favoritos" : "Eliminado de favoritos", "success");
-  // Refresh current list view
   allRoutes = await getRoutes();
   renderRoutesList(allRoutes, user);
 }
@@ -264,7 +263,7 @@ export async function loadDetalleRoute(id) {
   if (!route) { wrap.innerHTML = `<p>Ruta no encontrada.</p>`; return; }
 
   const { currentUser } = await import("./auth.js");
-  const isFav = currentUser && (route.favoritedBy || []).includes(currentUser.uid);
+  let isFav = currentUser && (route.favoritedBy || []).includes(currentUser.uid);
 
   wrap.innerHTML = `
     <button class="btn-back" id="backBtn">← Volver a rutas</button>
@@ -283,7 +282,7 @@ export async function loadDetalleRoute(id) {
       </div>
       <p class="detalle-desc">${route.descripcion || "Sin descripción."}</p>
       <div class="detalle-actions">
-        <button class="btn-primary btn-fav-detalle ${isFav ? "btn-fav-active" : ""}" id="detalleFavBtn">
+        <button class="btn-primary" id="detalleFavBtn">
           ${isFav ? "❤️ En favoritos" : "🤍 Guardar"}
         </button>
       </div>
@@ -308,22 +307,21 @@ export async function loadDetalleRoute(id) {
 
   wrap.querySelector("#backBtn").addEventListener("click", () => navigate("rutas"));
 
-  // Fav button
   const favBtn = wrap.querySelector("#detalleFavBtn");
   if (favBtn) {
     favBtn.addEventListener("click", async () => {
       if (!currentUser) { window.openAuthModal(); return; }
-      const added = await toggleFavorite(id, currentUser);
-      favBtn.textContent = added ? "❤️ En favoritos" : "🤍 Guardar";
-      showToast(added ? "❤️ Añadido a favoritos" : "Eliminado de favoritos", "success");
+      favBtn.disabled = true;
+      isFav = await toggleFavorite(id, currentUser);
+      favBtn.textContent = isFav ? "❤️ En favoritos" : "🤍 Guardar";
+      favBtn.disabled = false;
+      showToast(isFav ? "❤️ Añadido a favoritos" : "Eliminado de favoritos", "success");
     });
   }
 
-  // Comment login btn
   const clb = wrap.querySelector("#commentLoginBtn");
   if (clb) clb.addEventListener("click", (e) => { e.preventDefault(); window.openAuthModal(); });
 
-  // Send comment
   const sendBtn = wrap.querySelector("#commentSend");
   const inputEl = wrap.querySelector("#commentInput");
   if (sendBtn && inputEl) {
@@ -334,11 +332,11 @@ export async function loadDetalleRoute(id) {
       await addComment(id, text, currentUser);
       inputEl.value = "";
       sendBtn.disabled = false;
+      inputEl.focus();
     });
     inputEl.addEventListener("keydown", (e) => { if (e.key === "Enter") sendBtn.click(); });
   }
 
-  // Listen comments
   const commentList = wrap.querySelector("#commentList");
   unsubComments = listenComments(id, (comments) => {
     if (!comments.length) {
@@ -362,8 +360,8 @@ export async function loadDetalleRoute(id) {
 
 // ── LOAD FAVORITES PAGE ──
 export async function loadFavoritesPage(user) {
-  const gate = document.getElementById("favAuthGate");
-  const list = document.getElementById("favList");
+  const gate  = document.getElementById("favAuthGate");
+  const list  = document.getElementById("favList");
   const empty = document.getElementById("emptyFavs");
 
   if (!user) {
@@ -374,12 +372,13 @@ export async function loadFavoritesPage(user) {
   }
   gate.classList.add("hidden");
   list.classList.remove("hidden");
+  empty.classList.add("hidden");
   list.innerHTML = `<div class="skeleton-card"></div><div class="skeleton-card"></div>`;
 
   const favs = await getUserFavorites(user.uid);
   list.innerHTML = "";
   if (!favs.length) { empty.classList.remove("hidden"); return; }
-  empty.classList.add("hidden");
+
   favs.forEach((r, i) => {
     const card = renderCard(r, user, async (id) => {
       await toggleFavorite(id, user);
@@ -392,28 +391,46 @@ export async function loadFavoritesPage(user) {
 }
 
 // ── LOAD PROFILE PAGE ──
+// BUGS CORREGIDOS:
+//   1. getUserRoutes ya no usa orderBy compuesto (fallaba silenciosamente)
+//   2. Cuenta favoritos directamente desde Firestore, no del doc usuario
+//   3. Ambas queries corren en paralelo con Promise.all
 export async function loadProfilePage(user) {
   if (!user) return;
-  document.getElementById("profileAvatarBig").textContent = (user.displayName || user.email)[0].toUpperCase();
-  document.getElementById("profileName").textContent = user.displayName || "Sin nombre";
+
+  document.getElementById("profileAvatarBig").textContent =
+    (user.displayName || user.email)[0].toUpperCase();
+  document.getElementById("profileName").textContent =
+    user.displayName || "Sin nombre";
   document.getElementById("profileEmail").textContent = user.email;
-  document.getElementById("profileJoined").textContent = `Miembro desde ${new Date(user.metadata.creationTime).toLocaleDateString("es-ES", { year: "numeric", month: "long" })}`;
+  document.getElementById("profileJoined").textContent =
+    `Miembro desde ${new Date(user.metadata.creationTime).toLocaleDateString("es-ES", { year: "numeric", month: "long" })}`;
 
-  const myRoutes = await getUserRoutes(user.uid);
+  document.getElementById("pStatRoutes").textContent = "…";
+  document.getElementById("pStatFavs").textContent = "…";
+
+  // Cargar en paralelo
+  const [myRoutes, myFavs] = await Promise.all([
+    getUserRoutes(user.uid),
+    getUserFavorites(user.uid)
+  ]);
+
   document.getElementById("pStatRoutes").textContent = myRoutes.length;
-
-  const userData = await getDoc(doc(db, "users", user.uid));
-  const favCount = (userData.data()?.favorites || []).length;
-  document.getElementById("pStatFavs").textContent = favCount;
+  document.getElementById("pStatFavs").textContent = myFavs.length;
 
   const myList = document.getElementById("myRoutesList");
   myList.innerHTML = "";
+
   if (!myRoutes.length) {
-    myList.innerHTML = `<p class="empty-msg">Aún no has creado rutas</p>`;
+    myList.innerHTML = `<p class="empty-msg" style="grid-column:1/-1">Aún no has creado rutas 🛼<br><a href="#" data-page="crear" style="color:var(--primary)">Convocar una ruta →</a></p>`;
     return;
   }
+
   myRoutes.forEach((r, i) => {
-    const card = renderCard(r, user, (id) => handleFav(id, user));
+    const card = renderCard(r, user, async (id) => {
+      await toggleFavorite(id, user);
+      loadProfilePage(user);
+    });
     card.style.animationDelay = `${i * 0.06}s`;
     myList.appendChild(card);
   });
